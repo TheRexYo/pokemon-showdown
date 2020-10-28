@@ -121,6 +121,7 @@ export const Pokedex: {[speciesid: string]: SpeciesData} = {
 		//evos: ["ivysaur"],
 		eggGroups: ["Bird 3", "Dark 5"],
 	},
+	/*
 	//#17 - Crowpse
 	crowpse: {
 		gen: 1,
@@ -404,4 +405,5 @@ export const Pokedex: {[speciesid: string]: SpeciesData} = {
 		evoLevel: 64,
 		eggGroups: ["Fighting 4", "Wind 4"], //This Zelckeymon acts as a mediator between Flying mammals and Fighting mammals.
 	},
+*/
 };

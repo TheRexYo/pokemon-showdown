@@ -704,4 +704,69 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 			}
 		},
 	},
+	//#44 - Surprise Attack
+	surpriseattack: {
+		num: 44,
+		rating: 5,
+		name: "Surprise Attack",
+		desc: "This Zelckeymon has its Attack and Speed doubled for 2 turns when it switches in.",
+		shortDesc: "This Zelckeymon's Atk and Spe are doubled for 2 turns on switch-in.",
+		onStart(pokemon) {
+			pokemon.addVolatile('surpriseattack');
+		},
+		onEnd(pokemon) {
+			delete pokemon.volatiles['surpriseattack'];
+			this.add('-end', pokemon, 'Suprise Attack', '[silent]');
+		},
+		condition: {
+			duration: 2,
+			onStart(target) {
+				this.add('-start', target, 'ability: Surprise Attack');
+			},
+			onModifyAtkPriority: 1,
+			onModifyAtk(atk, pokemon) {
+				return this.chainModify(2);
+			},
+			onModifySpe(spe, pokemon) {
+				return this.chainModify(2);
+			},
+			onEnd(target) {
+				this.add('-end', target, 'Surprise Attack');
+			},
+		},
+	},
+	//#45 - Prankster
+	prankster: {
+		onModifyPriority(priority, pokemon, target, move) {
+			if (move?.category === 'Status') {
+				move.pranksterBoosted = true;
+				return priority + 1;
+			}
+		},
+		name: "Prankster",
+		desc: "This Zelckeymon's priority is increased by 1 when using status moves.",
+		shortDesc: "+1 Priority to status moves.",
+		rating: 4,
+		num: 45,
+	},
+	//#46 - Trapper
+	trapper: {
+		//Effect is hard-coded in 'conditions.ts' / 'conditions.js'
+		name: "Trapper",
+		desc: "This Zelckeymon's partially-trapping moves always trap the target for 8 turns.",
+		shortDesc: "This Zelckeymon's moves always trap for the maximum duration.",
+		rating: 1,
+		num: 46,
+	},
+	//#47 - Dark Body
+	darkbody: {
+		onEffectiveness(typeMod, target, type, move) {
+			return typeMod + this.dex.getEffectiveness(type, 'Dark');
+		},
+		name: "Dark Body",
+		desc: "This Zelckeymon includes Dark-Type in it's type-effectiveness.",
+		shortDesc: "This Zelckeymon adds Dark to its typing.",
+		rating: 0,
+		num: 47,
+	},
 };

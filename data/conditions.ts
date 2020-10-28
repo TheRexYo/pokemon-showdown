@@ -208,6 +208,7 @@ export const Conditions: {[k: string]: ConditionData} = {
 		duration: 5,
 		durationCallback(target, source) {
 			if (source?.hasItem('gripclaw')) return 8;
+			if (source?.hasAbility('trapper')) return 8;
 			return this.random(5, 7);
 		},
 		onStart(pokemon, source) {
@@ -361,8 +362,8 @@ export const Conditions: {[k: string]: ConditionData} = {
 			if (data.source.hasAbility('normalize') && this.gen >= 6) {
 				data.moveData.type = 'Normal';
 			}
-			if (data.source.hasAbility('adaptability') && this.gen >= 6) {
-				data.moveData.stab = 2;
+			if (data.source.hasAbility('elementalboost') && this.gen >= 6) {
+				data.moveData.stab = 1.75;
 			}
 			// @ts-ignore
 			const hitMove: ActiveMove = new this.dex.Data.Move(data.moveData);

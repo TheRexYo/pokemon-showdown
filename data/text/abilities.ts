@@ -197,6 +197,26 @@ export const AbilitiesText = {
 		desc: "This Zelckeymon is immune to Grass-type moves and raises its Special Attack by 1 stage when hit by a Grass-type move.",
 		shortDesc: "This Zelckeymon absorbs Grass attacks that hit it to raise Sp. Atk by 1; Grass immunity.",
 	},
+	horror: {
+		name: "Horror",
+		desc: "If this Zelckeymon is knocked out with a move, that move's user has its Attack lowered by 3 stages.",
+		shortDesc: "If this Zelckeymon is KOed with a move, that move's user has its Atk lowered by 3.",
+	},
+	surpriseattack: {
+		name: "Surprise Attack",
+		desc: "This Zelckeymon has its Attack and Speed doubled for 2 turns when it switches in.",
+		shortDesc: "This Zelckeymon's Atk and Spe are doubled for 2 turns on switch-in.",
+	},
+	prankster: {
+		name: "Prankster",
+		desc: "This Zelckeymon's priority is increased by 1 when using status moves.",
+		shortDesc: "+1 Priority to status moves.",
+	},
+	trapper: {
+		name: "Trapper",
+		desc: "This Zelckeymon's partially-trapping moves always trap the target for 8 turns.",
+		shortDesc: "This Zelckeymon's moves always trap for the maximum duration.",
+	},
 	// Old Abilities //
 	
 	/*
