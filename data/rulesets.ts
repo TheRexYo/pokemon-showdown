@@ -20,14 +20,14 @@ export const Formats: {[k: string]: FormatData} = {
 		ruleset: [
 			'+Unreleased', 'Sleep Clause Mod', 'Species Clause', 'Nickname Clause', 'OHKO Clause', 'HP Percentage Mod', 'Cancel Mod',
 		],
-		banlist: ['Soul Dew'],
+		//banlist: ['Soul Dew'],
 	},
 	standardgbu: {
 		effectType: 'ValidatorRule',
 		name: 'Standard GBU',
 		desc: "The standard ruleset for all official in-game Pok&eacute;mon tournaments and Battle Spot",
 		ruleset: ['Obtainable', 'Team Preview', 'Species Clause', 'Nickname Clause', 'Item Clause', 'Cancel Mod'],
-		banlist: ['Battle Bond',
+		/*banlist: ['Battle Bond',
 			'Mewtwo', 'Mew',
 			'Lugia', 'Ho-Oh', 'Celebi',
 			'Kyogre', 'Groudon', 'Rayquaza', 'Jirachi', 'Deoxys',
@@ -36,7 +36,7 @@ export const Formats: {[k: string]: FormatData} = {
 			'Xerneas', 'Yveltal', 'Zygarde', 'Diancie', 'Hoopa', 'Volcanion',
 			'Cosmog', 'Cosmoem', 'Solgaleo', 'Lunala', 'Necrozma', 'Magearna', 'Marshadow', 'Zeraora',
 			'Meltan', 'Melmetal', 'Zacian', 'Zamazenta', 'Eternatus', 'Zarude', 'Calyrex',
-		],
+		],*/
 		onValidateSet(set, format) {
 			if (this.gen < 7 && this.toID(set.item) === 'souldew') {
 				return [`${set.name || set.species} has Soul Dew, which is banned in ${format.name}.`];
@@ -48,7 +48,7 @@ export const Formats: {[k: string]: FormatData} = {
 		name: 'Minimal GBU',
 		desc: "The standard ruleset for official tournaments, but without Restricted Legendary bans",
 		ruleset: ['Obtainable', 'Species Clause', 'Nickname Clause', 'Item Clause', 'Team Preview', 'Cancel Mod'],
-		banlist: ['Battle Bond',
+		/*banlist: ['Battle Bond',
 			'Mew',
 			'Celebi',
 			'Jirachi', 'Deoxys',
@@ -56,7 +56,7 @@ export const Formats: {[k: string]: FormatData} = {
 			'Victini', 'Keldeo', 'Meloetta', 'Genesect',
 			'Diancie', 'Hoopa', 'Volcanion',
 			'Magearna', 'Marshadow', 'Zeraora',
-		],
+		],*/
 		onValidateSet(set, format) {
 			if (this.gen < 7 && this.toID(set.item) === 'souldew') {
 				return [`${set.name || set.species} has Soul Dew, which is banned in ${format.name}.`];
@@ -273,7 +273,7 @@ export const Formats: {[k: string]: FormatData} = {
 		effectType: 'ValidatorRule',
 		name: 'Galar Pokedex',
 		desc: "Only allows Pok&eacute;mon native to the Galar region (Sw/Sh)",
-		banlist: ['Raichu-Alola', 'Weezing-Base'],
+		//banlist: ['Raichu-Alola', 'Weezing-Base'],
 		onValidateSet(set, format) {
 			const galarDex = [
 				"Grookey", "Thwackey", "Rillaboom", "Scorbunny", "Raboot", "Cinderace", "Sobble", "Drizzile", "Inteleon", "Blipbug", "Dottler", "Orbeetle", "Caterpie", "Metapod", "Butterfree", "Grubbin", "Charjabug", "Vikavolt", "Hoothoot", "Noctowl", "Rookidee", "Corvisquire", "Corviknight", "Skwovet", "Greedent", "Pidove", "Tranquill", "Unfezant", "Nickit", "Thievul", "Zigzagoon", "Linoone", "Obstagoon", "Wooloo", "Dubwool", "Lotad", "Lombre", "Ludicolo", "Seedot", "Nuzleaf", "Shiftry", "Chewtle", "Drednaw", "Purrloin", "Liepard", "Yamper", "Boltund", "Bunnelby", "Diggersby", "Minccino", "Cinccino", "Bounsweet", "Steenee", "Tsareena", "Oddish", "Gloom", "Vileplume", "Bellossom", "Budew", "Roselia", "Roserade", "Wingull", "Pelipper", "Joltik", "Galvantula", "Electrike", "Manectric", "Vulpix", "Ninetales", "Growlithe", "Arcanine", "Vanillite", "Vanillish", "Vanilluxe", "Swinub", "Piloswine", "Mamoswine", "Delibird", "Snorunt", "Glalie", "Froslass", "Baltoy", "Claydol", "Mudbray", "Mudsdale", "Dwebble", "Crustle", "Golett", "Golurk", "Munna", "Musharna", "Natu", "Xatu", "Stufful", "Bewear", "Snover", "Abomasnow", "Krabby", "Kingler", "Wooper", "Quagsire", "Corphish", "Crawdaunt", "Nincada", "Ninjask", "Shedinja", "Tyrogue", "Hitmonlee", "Hitmonchan", "Hitmontop", "Pancham", "Pangoro", "Klink", "Klang", "Klinklang", "Combee", "Vespiquen", "Bronzor", "Bronzong", "Ralts", "Kirlia", "Gardevoir", "Gallade", "Drifloon", "Drifblim", "Gossifleur", "Eldegoss", "Cherubi", "Cherrim", "Stunky", "Skuntank", "Tympole", "Palpitoad", "Seismitoad", "Duskull", "Dusclops", "Dusknoir", "Machop", "Machoke", "Machamp", "Gastly", "Haunter", "Gengar", "Magikarp", "Gyarados", "Goldeen", "Seaking", "Remoraid", "Octillery", "Shellder", "Cloyster", "Feebas", "Milotic", "Basculin", "Wishiwashi", "Pyukumuku", "Trubbish", "Garbodor", "Sizzlipede", "Centiskorch", "Rolycoly", "Carkol", "Coalossal", "Diglett", "Dugtrio", "Drilbur", "Excadrill", "Roggenrola", "Boldore", "Gigalith", "Timburr", "Gurdurr", "Conkeldurr", "Woobat", "Swoobat", "Noibat", "Noivern", "Onix", "Steelix", "Arrokuda", "Barraskewda", "Meowth", "Perrserker", "Persian", "Milcery", "Alcremie", "Cutiefly", "Ribombee", "Ferroseed", "Ferrothorn", "Pumpkaboo", "Gourgeist", "Pichu", "Pikachu", "Raichu", "Eevee", "Vaporeon", "Jolteon", "Flareon", "Espeon", "Umbreon", "Leafeon", "Glaceon", "Sylveon", "Applin", "Flapple", "Appletun", "Espurr", "Meowstic", "Swirlix", "Slurpuff", "Spritzee", "Aromatisse", "Dewpider", "Araquanid", "Wynaut", "Wobbuffet", "Farfetch\u2019d", "Sirfetch\u2019d", "Chinchou", "Lanturn", "Croagunk", "Toxicroak", "Scraggy", "Scrafty", "Stunfisk", "Shuckle", "Barboach", "Whiscash", "Shellos", "Gastrodon", "Wimpod", "Golisopod", "Binacle", "Barbaracle", "Corsola", "Cursola", "Impidimp", "Morgrem", "Grimmsnarl", "Hatenna", "Hattrem", "Hatterene", "Salandit", "Salazzle", "Pawniard", "Bisharp", "Throh", "Sawk", "Koffing", "Weezing", "Bonsly", "Sudowoodo", "Cleffa", "Clefairy", "Clefable", "Togepi", "Togetic", "Togekiss", "Munchlax", "Snorlax", "Cottonee", "Whimsicott", "Rhyhorn", "Rhydon", "Rhyperior", "Gothita", "Gothorita", "Gothitelle", "Solosis", "Duosion", "Reuniclus", "Karrablast", "Escavalier", "Shelmet", "Accelgor", "Elgyem", "Beheeyem", "Cubchoo", "Beartic", "Rufflet", "Braviary", "Vullaby", "Mandibuzz", "Skorupi", "Drapion", "Litwick", "Lampent", "Chandelure", "Inkay", "Malamar", "Sneasel", "Weavile", "Sableye", "Mawile", "Maractus", "Sigilyph", "Riolu", "Lucario", "Torkoal", "Mimikyu", "Cufant", "Copperajah", "Qwilfish", "Frillish", "Jellicent", "Mareanie", "Toxapex", "Cramorant", "Toxel", "Toxtricity", "Toxtricity-Low-Key", "Silicobra", "Sandaconda", "Hippopotas", "Hippowdon", "Durant", "Heatmor", "Helioptile", "Heliolisk", "Hawlucha", "Trapinch", "Vibrava", "Flygon", "Axew", "Fraxure", "Haxorus", "Yamask", "Runerigus", "Cofagrigus", "Honedge", "Doublade", "Aegislash", "Ponyta", "Rapidash", "Sinistea", "Polteageist", "Indeedee", "Phantump", "Trevenant", "Morelull", "Shiinotic", "Oranguru", "Passimian", "Morpeko", "Falinks", "Drampa", "Turtonator", "Togedemaru", "Snom", "Frosmoth", "Clobbopus", "Grapploct", "Pincurchin", "Mantyke", "Mantine", "Wailmer", "Wailord", "Bergmite", "Avalugg", "Dhelmise", "Lapras", "Lunatone", "Solrock", "Mime Jr.", "Mr. Mime", "Mr. Rime", "Darumaka", "Darmanitan", "Stonjourner", "Eiscue", "Duraludon", "Rotom", "Ditto", "Dracozolt", "Arctozolt", "Dracovish", "Arctovish", "Charmander", "Charmeleon", "Charizard", "Type: Null", "Silvally", "Larvitar", "Pupitar", "Tyranitar", "Deino", "Zweilous", "Hydreigon", "Goomy", "Sliggoo", "Goodra", "Jangmo-o", "Hakamo-o", "Kommo-o", "Dreepy", "Drakloak", "Dragapult",
@@ -528,7 +528,7 @@ export const Formats: {[k: string]: FormatData} = {
 		effectType: 'ValidatorRule',
 		name: 'Evasion Abilities Clause',
 		desc: "Bans abilities that boost Evasion under certain weather conditions",
-		banlist: ['Sand Veil', 'Snow Cloak'],
+		//banlist: ['Sand Veil', 'Snow Cloak'],
 		onBegin() {
 			this.add('rule', 'Evasion Abilities Clause: Evasion abilities are banned');
 		},
@@ -537,7 +537,7 @@ export const Formats: {[k: string]: FormatData} = {
 		effectType: 'ValidatorRule',
 		name: 'Evasion Moves Clause',
 		desc: "Bans moves that consistently raise the user's evasion when used",
-		banlist: ['Minimize', 'Double Team'],
+		//banlist: ['Minimize', 'Double Team'],
 		onBegin() {
 			this.add('rule', 'Evasion Moves Clause: Evasion moves are banned');
 		},
@@ -546,9 +546,9 @@ export const Formats: {[k: string]: FormatData} = {
 		effectType: 'ValidatorRule',
 		name: 'Accuracy Moves Clause',
 		desc: "Bans moves that have a chance to lower the target's accuracy when used",
-		banlist: [
+		/*banlist: [
 			'Flash', 'Kinesis', 'Leaf Tornado', 'Mirror Shot', 'Mud Bomb', 'Mud-Slap', 'Muddy Water', 'Night Daze', 'Octazooka', 'Sand Attack', 'Smokescreen',
-		],
+		],*/
 		onBegin() {
 			this.add('rule', 'Accuracy Moves Clause: Accuracy-lowering moves are banned');
 		},
@@ -557,7 +557,7 @@ export const Formats: {[k: string]: FormatData} = {
 		effectType: 'ValidatorRule',
 		name: 'Sleep Moves Clause',
 		desc: "Bans all moves that induce sleep, such as Hypnosis",
-		banlist: ['Yawn'],
+		//banlist: ['Yawn'],
 		onBegin() {
 			this.add('rule', 'Sleep Clause: Sleep-inducing moves are banned');
 		},
@@ -612,7 +612,7 @@ export const Formats: {[k: string]: FormatData} = {
 		effectType: 'ValidatorRule',
 		name: 'Moody Clause',
 		desc: "Bans the ability Moody",
-		banlist: ['Moody'],
+		//banlist: ['Moody'],
 		onBegin() {
 			this.add('rule', 'Moody Clause: Moody is banned');
 		},
@@ -621,7 +621,7 @@ export const Formats: {[k: string]: FormatData} = {
 		effectType: 'ValidatorRule',
 		name: 'Swagger Clause',
 		desc: "Bans the move Swagger",
-		banlist: ['Swagger'],
+		//banlist: ['Swagger'],
 		onBegin() {
 			this.add('rule', 'Swagger Clause: Swagger is banned');
 		},
@@ -630,7 +630,7 @@ export const Formats: {[k: string]: FormatData} = {
 		effectType: 'ValidatorRule',
 		name: 'Baton Pass Clause',
 		desc: "Stops teams from having more than one Pok&eacute;mon with Baton Pass, and no Pok&eacute;mon may be capable of passing boosts to both Speed and another stat",
-		banlist: ["Baton Pass > 1"],
+		//banlist: ["Baton Pass > 1"],
 		onBegin() {
 			this.add('rule', 'Baton Pass Clause: Limit one Baton Passer, can\'t pass Spe and other stats simultaneously');
 		},
@@ -701,7 +701,7 @@ export const Formats: {[k: string]: FormatData} = {
 		effectType: 'ValidatorRule',
 		name: '3 Baton Pass Clause',
 		desc: "Stops teams from having more than three Pok&eacute;mon with Baton Pass",
-		banlist: ["Baton Pass > 3"],
+		//banlist: ["Baton Pass > 3"],
 		onBegin() {
 			this.add('rule', '3 Baton Pass Clause: Limit three Baton Passers');
 		},
@@ -710,7 +710,7 @@ export const Formats: {[k: string]: FormatData} = {
 		effectType: 'ValidatorRule',
 		name: 'CFZ Clause',
 		desc: "Bans the use of crystal-free Z-Moves",
-		banlist: [
+		/*banlist: [
 			'10,000,000 Volt Thunderbolt', 'Acid Downpour', 'All-Out Pummeling', 'Black Hole Eclipse', 'Bloom Doom',
 			'Breakneck Blitz', 'Catastropika', 'Clangorous Soulblaze', 'Continental Crush', 'Corkscrew Crash',
 			'Devastating Drake', 'Extreme Evoboost', 'Genesis Supernova', 'Gigavolt Havoc', 'Guardian of Alola',
@@ -719,7 +719,7 @@ export const Formats: {[k: string]: FormatData} = {
 			'Pulverizing Pancake', 'Savage Spin-Out', 'Searing Sunraze Smash', 'Shattered Psyche', 'Sinister Arrow Raid',
 			'Soul-Stealing 7-Star Strike', 'Splintered Stormshards', 'Stoked Sparksurfer', 'Subzero Slammer',
 			'Supersonic Skystrike', 'Tectonic Rage', 'Twinkle Tackle',
-		],
+		],*/
 		onBegin() {
 			this.add('rule', 'CFZ Clause: Crystal-free Z-Moves are banned');
 		},
