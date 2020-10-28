@@ -1,0 +1,1 @@
+cmd /k for /r %cd% %%i in (.) do @copy "test.txt" "%%i"
