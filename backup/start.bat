@@ -1,1 +1,0 @@
-cmd /k node pokemon-showdown 8000
