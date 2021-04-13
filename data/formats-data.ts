@@ -1,14 +1,14 @@
 export const FormatsData: {[k: string]: SpeciesFormatsData} = {
 	chomp: {
-		tier: "E",
+		tier: "LC",
 	},
 	zelckey: {
-		tier: "E",
+		tier: "LC",
 	},
 	pyrex: {
-		tier: "E",
+		tier: "LC",
 	},
 	spookaburra: {
-		tier: "E",
+		tier: "LC",
 	},
 };
