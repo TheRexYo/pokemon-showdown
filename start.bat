@@ -1,1 +1,2 @@
-cmd /k node pokemon-showdown 8000
+node pokemon-showdown start 8000
+cmd /k

@@ -19,7 +19,7 @@ const HOSTS_FILE = 'config/hosts.csv';
 const PROXIES_FILE = 'config/proxies.csv';
 
 import * as dns from 'dns';
-import {FS} from '../lib/fs';
+import {FS, Net} from '../lib';
 
 export interface AddressRange {
 	minIP: number;
@@ -177,7 +177,10 @@ export const IPTools = new class {
 		const aParts = a.split('.');
 		const bParts = b.split('.');
 		while (diff === 0) {
-			diff = (parseInt(aParts[i]) || 0) - (parseInt(bParts[i]) || 0);
+			const aPart = parseInt(aParts[i]);
+			const bPart = parseInt(bParts[i]);
+			if (isNaN(aPart) || isNaN(bPart)) throw new Error("Invalid IP passed to IPTools.ipSort.");
+			diff = aPart - bPart;
 			i++;
 		}
 		return diff;
@@ -203,7 +206,7 @@ export const IPTools = new class {
 	 * in the range.
 	 */
 	checker(rangeString: string | string[]) {
-		if (!rangeString || !rangeString.length) return () => false;
+		if (!rangeString?.length) return () => false;
 		let ranges: AddressRange[] = [];
 		if (typeof rangeString === 'string') {
 			const rangePatterns = IPTools.stringToRange(rangeString);
@@ -217,11 +220,12 @@ export const IPTools = new class {
 	/**
 	 * Proxy and host management functions
 	 */
-	ranges: AddressRange[] = [];
-	singleIPOpenProxies: Set<string> = new Set();
-	proxyHosts: Set<string> = new Set();
-	residentialHosts: Set<string> = new Set();
-	mobileHosts: Set<string> = new Set();
+	ranges: (AddressRange & {host: string})[] = [];
+	singleIPOpenProxies = new Set<string>();
+	torProxyIps = new Set<string>();
+	proxyHosts = new Set<string>();
+	residentialHosts = new Set<string>();
+	mobileHosts = new Set<string>();
 	async loadHostsAndRanges() {
 		const data = await FS(HOSTS_FILE).readIfExists() + await FS(PROXIES_FILE).readIfExists();
 		// Strip carriage returns for Windows compatibility
@@ -430,7 +434,7 @@ export const IPTools = new class {
 		}
 	}
 
-	addRange(range: AddressRange) {
+	addRange(range: AddressRange & {host: string}) {
 		if (IPTools.getRange(range.minIP, range.maxIP)) {
 			IPTools.removeRange(range.minIP, range.maxIP);
 		}
@@ -466,7 +470,7 @@ export const IPTools = new class {
 					resolve(`${ip.split('.').slice(0, 2).join('.')}?/unknown`);
 					return;
 				}
-				if (!hosts || !hosts[0]) {
+				if (!hosts?.[0]) {
 					if (ip.startsWith('50.')) {
 						resolve('comcast.net?/res');
 					} else if (ipNumber >= telstraRange.minIP && ipNumber <= telstraRange.maxIP) {
@@ -557,7 +561,7 @@ export const IPTools = new class {
 		if (Punishments.sharedIps.has(ip)) {
 			return 'shared';
 		}
-		if (this.singleIPOpenProxies.has(ip)) {
+		if (this.singleIPOpenProxies.has(ip) || this.torProxyIps.has(ip)) {
 			// single-IP open proxies
 			return 'proxy';
 		}
@@ -601,12 +605,25 @@ export const IPTools = new class {
 		// rdns entry exists but is unrecognized
 		return 'res?';
 	}
+	async updateTorRanges() {
+		try {
+			const raw = await Net('https://check.torproject.org/torbulkexitlist').get();
+			const torIps = raw.split('\n');
+			for (const ip of torIps) {
+				if (this.ipRegex.test(ip)) {
+					this.torProxyIps.add(ip);
+				}
+			}
+		} catch (e) {}
+	}
 };
 
-const telstraRange: AddressRange = {
+const telstraRange: AddressRange & {host: string} = {
 	minIP: IPTools.ipToNumber("101.160.0.0"),
 	maxIP: IPTools.ipToNumber("101.191.255.255"),
 	host: 'telstra.net?/res',
 };
 
 export default IPTools;
+
+void IPTools.updateTorRanges();

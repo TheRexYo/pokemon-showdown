@@ -1,0 +1,2 @@
+node build
+cmd /k

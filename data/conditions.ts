@@ -162,19 +162,19 @@ export const Conditions: {[k: string]: ConditionData} = {
 		},
 		onBeforeMovePriority: 3,
 		onBeforeMove(pokemon) {
-			pokemon.volatiles.confusion.time--;
-			if (!pokemon.volatiles.confusion.time) {
+			pokemon.volatiles['confusion'].time--;
+			if (!pokemon.volatiles['confusion'].time) {
 				pokemon.removeVolatile('confusion');
 				return;
 			}
 			this.add('-activate', pokemon, 'confusion');
-			if (!this.randomChance(1, 3)) {
+			if (!this.randomChance(33, 100)) {
 				return;
 			}
 			this.activeTarget = pokemon;
-			const damage = this.getDamage(pokemon, pokemon, 40);
+			const damage = this.actions.getDamage(pokemon, pokemon, 40);
 			if (typeof damage !== 'number') throw new Error("Confusion damage not dealt");
-			const activeMove = {id: toID('confused'), effectType: 'Move', type: '???'};
+			const activeMove = {id: this.toID('confused'), effectType: 'Move', type: '???'};
 			this.damage(damage, pokemon, pokemon, activeMove as ActiveMove);
 			return false;
 		},
@@ -208,7 +208,6 @@ export const Conditions: {[k: string]: ConditionData} = {
 		duration: 5,
 		durationCallback(target, source) {
 			if (source?.hasItem('gripclaw')) return 8;
-			if (source?.hasAbility('trapper')) return 8;
 			return this.random(5, 7);
 		},
 		onStart(pokemon, source) {
@@ -270,8 +269,18 @@ export const Conditions: {[k: string]: ConditionData} = {
 		duration: 2,
 		onStart(target, source, effect) {
 			this.effectData.move = effect.id;
-			target.addVolatile(effect.id, source);
+			target.addVolatile(effect.id);
+			let moveTarget: Pokemon | null = source;
+			if (effect.sourceEffect && this.dex.moves.get(effect.id).target === 'normal') {
+				// this move was called by another move such as metronome and needs a random target to be determined now
+				// won't randomly choose an empty slot if there's at least one valid target
+				moveTarget = this.getRandomTarget(target, effect.id);
+			}
+			// if there are no valid targets, randomly choose one later
+			target.volatiles[effect.id].targetLoc = target.getLocOf(moveTarget || target);
 			this.attrLastMove('[still]');
+			// Run side-effects normally associated with hitting (e.g., Protean, Libero)
+			this.runEvent('PrepareHit', target, source, effect);
 		},
 		onEnd(target) {
 			target.removeVolatile(this.effectData.move);
@@ -288,7 +297,7 @@ export const Conditions: {[k: string]: ConditionData} = {
 		noCopy: true,
 		onStart(pokemon) {
 			if (!this.activeMove) throw new Error("Battle.activeMove is null");
-			if (!this.activeMove.id || this.activeMove.hasBounced) return false;
+			if (!this.activeMove.id || this.activeMove.hasBounced || this.activeMove.sourceEffect === 'snatch') return false;
 			this.effectData.move = this.activeMove.id;
 		},
 		onBeforeMove(pokemon, target, move) {
@@ -346,9 +355,9 @@ export const Conditions: {[k: string]: ConditionData} = {
 		onEnd(target) {
 			const data = this.effectData;
 			// time's up; time to hit! :D
-			const move = this.dex.getMove(data.move);
+			const move = this.dex.moves.get(data.move);
 			if (target.fainted || target === data.source) {
-				this.hint(`${move.name} did not hit because the target is ${(data.fainted ? 'fainted' : 'the user')}.`);
+				this.hint(`${move.name} did not hit because the target is ${(target.fainted ? 'fainted' : 'the user')}.`);
 				return;
 			}
 
@@ -362,13 +371,12 @@ export const Conditions: {[k: string]: ConditionData} = {
 			if (data.source.hasAbility('normalize') && this.gen >= 6) {
 				data.moveData.type = 'Normal';
 			}
-			if (data.source.hasAbility('elementalboost') && this.gen >= 6) {
-				data.moveData.stab = 1.75;
+			if (data.source.hasAbility('adaptability') && this.gen >= 6) {
+				data.moveData.stab = 2;
 			}
-			// @ts-ignore
-			const hitMove: ActiveMove = new this.dex.Data.Move(data.moveData);
+			const hitMove = new this.dex.Move(data.moveData) as ActiveMove;
 
-			this.trySpreadMoveHit([target], data.source, hitMove);
+			this.actions.trySpreadMoveHit([target], data.source, hitMove, true);
 		},
 	},
 	healreplacement: {
@@ -405,8 +413,7 @@ export const Conditions: {[k: string]: ConditionData} = {
 			return success;
 		},
 		onRestart() {
-			// @ts-ignore
-			if (this.effectData.counter < this.effect.counterMax) {
+			if (this.effectData.counter < (this.effect as Condition).counterMax!) {
 				this.effectData.counter *= 3;
 			}
 			this.effectData.duration = 2;
@@ -419,14 +426,14 @@ export const Conditions: {[k: string]: ConditionData} = {
 		onBasePowerPriority: 14,
 		onBasePower(basePower, user, target, move) {
 			this.debug('Gem Boost');
-			return this.chainModify([0x14CD, 0x1000]);
+			return this.chainModify([5325, 4096]);
 		},
 	},
 
 	// weather is implemented here since it's so important to the game
 
-	rain: {
-		name: 'Rain',
+	raindance: {
+		name: 'RainDance',
 		effectType: 'Weather',
 		duration: 5,
 		durationCallback(source, effect) {
@@ -449,14 +456,14 @@ export const Conditions: {[k: string]: ConditionData} = {
 		onStart(battle, source, effect) {
 			if (effect?.effectType === 'Ability') {
 				if (this.gen <= 5) this.effectData.duration = 0;
-				this.add('-weather', 'Rain', '[from] ability: ' + effect, '[of] ' + source);
+				this.add('-weather', 'RainDance', '[from] ability: ' + effect, '[of] ' + source);
 			} else {
-				this.add('-weather', 'Rain');
+				this.add('-weather', 'RainDance');
 			}
 		},
 		onResidualOrder: 1,
 		onResidual() {
-			this.add('-weather', 'Rain', '[upkeep]');
+			this.add('-weather', 'RainDance', '[upkeep]');
 			this.eachEvent('Weather');
 		},
 		onEnd() {
@@ -495,8 +502,8 @@ export const Conditions: {[k: string]: ConditionData} = {
 			this.add('-weather', 'none');
 		},
 	},
-	sun: {
-		name: 'Sun',
+	sunnyday: {
+		name: 'SunnyDay',
 		effectType: 'Weather',
 		duration: 5,
 		durationCallback(source, effect) {
@@ -508,20 +515,20 @@ export const Conditions: {[k: string]: ConditionData} = {
 		onWeatherModifyDamage(damage, attacker, defender, move) {
 			if (defender.hasItem('utilityumbrella')) return;
 			if (move.type === 'Fire') {
-				this.debug('Sun fire boost');
+				this.debug('Sunny Day fire boost');
 				return this.chainModify(1.5);
 			}
 			if (move.type === 'Water') {
-				this.debug('Sun water suppress');
+				this.debug('Sunny Day water suppress');
 				return this.chainModify(0.5);
 			}
 		},
 		onStart(battle, source, effect) {
 			if (effect?.effectType === 'Ability') {
 				if (this.gen <= 5) this.effectData.duration = 0;
-				this.add('-weather', 'Sun', '[from] ability: ' + effect, '[of] ' + source);
+				this.add('-weather', 'SunnyDay', '[from] ability: ' + effect, '[of] ' + source);
 			} else {
-				this.add('-weather', 'Sun');
+				this.add('-weather', 'SunnyDay');
 			}
 		},
 		onImmunity(type, pokemon) {
@@ -530,7 +537,7 @@ export const Conditions: {[k: string]: ConditionData} = {
 		},
 		onResidualOrder: 1,
 		onResidual() {
-			this.add('-weather', 'Sun', '[upkeep]');
+			this.add('-weather', 'SunnyDay', '[upkeep]');
 			this.eachEvent('Weather');
 		},
 		onEnd() {

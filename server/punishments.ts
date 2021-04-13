@@ -11,8 +11,7 @@
  * @license MIT license
  */
 
-import {FS} from '../lib/fs';
-import {Utils} from '../lib/utils';
+import {FS, Utils} from '../lib';
 
 const PUNISHMENT_FILE = 'config/punishments.tsv';
 const ROOM_PUNISHMENT_FILE = 'config/room-punishments.tsv';
@@ -24,6 +23,7 @@ const RANGELOCK_DURATION = 60 * 60 * 1000; // 1 hour
 const LOCK_DURATION = 48 * 60 * 60 * 1000; // 48 hours
 const GLOBALBAN_DURATION = 7 * 24 * 60 * 60 * 1000; // 1 week
 const BATTLEBAN_DURATION = 48 * 60 * 60 * 1000; // 48 hours
+const GROUPCHATBAN_DURATION = 7 * 24 * 60 * 60 * 1000; // 1 week
 const MOBILE_PUNISHMENT_DURATIION = 6 * 60 * 60 * 1000; // 6 hours
 
 const ROOMBAN_DURATION = 48 * 60 * 60 * 1000; // 48 hours
@@ -37,6 +37,20 @@ const AUTOLOCK_POINT_THRESHOLD = 8;
 
 const AUTOWEEKLOCK_THRESHOLD = 5; // number of global punishments to upgrade autolocks to weeklocks
 const AUTOWEEKLOCK_DAYS_TO_SEARCH = 60;
+
+/** The longest amount of time any individual timeout will be set for. */
+const MAX_PUNISHMENT_TIMER_LENGTH = 24 * 60 * 60 * 1000; // 24 hours
+
+/**
+ * The number of users from a groupchat whose creator was banned from using groupchats
+ * who may join a new groupchat before the GroupchatMonitor activates.
+ */
+const GROUPCHAT_PARTICIPANT_OVERLAP_THRESHOLD = 5;
+/**
+ * The minimum amount of time that must pass between activations of the GroupchatMonitor.
+ */
+const GROUPCHAT_MONITOR_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
 /**
  * A punishment is an array: [punishType, userid | #punishmenttype, expireTime, reason]
  */
@@ -152,6 +166,17 @@ export const Punishments = new class {
 	 */
 	readonly cfloods = new Set<string>();
 	/**
+	 * Participants in groupchats whose creators were banned from using groupchats.
+	 * Object keys are roomids of groupchats; values are Sets of user IDs.
+	 */
+	readonly bannedGroupchatParticipants: {[k: string]: Set<ID>} = {};
+	/** roomid:timestamp map */
+	readonly lastGroupchatMonitorTime: {[k: string]: number} = {};
+	/**
+	 * Map<userid that has been warned, reason they were warned for>
+	 */
+	readonly offlineWarns: Map<ID, string> = new Map();
+	/**
 	 * punishType is an allcaps string, for global punishments they can be
 	 * anything in the punishmentTypes map.
 	 *
@@ -185,6 +210,7 @@ export const Punishments = new class {
 		['BLACKLIST', 'blacklisted'],
 		['BATTLEBAN', 'battlebanned'],
 		['MUTE', 'muted'],
+		['GROUPCHATBAN', 'banned from using groupchats'],
 	]);
 	constructor() {
 		setImmediate(() => {
@@ -259,7 +285,7 @@ export const Punishments = new class {
 				buf += Punishments.renderEntry(entry, id);
 			}
 			return buf;
-		});
+		}, {throttle: 5000});
 	}
 
 	saveRoomPunishments() {
@@ -275,7 +301,7 @@ export const Punishments = new class {
 				buf += Punishments.renderEntry(entry, id);
 			}
 			return buf;
-		});
+		}, {throttle: 5000});
 	}
 
 	getEntry(entryId: string) {
@@ -318,8 +344,8 @@ export const Punishments = new class {
 		return entry;
 	}
 
-	appendPunishment(entry: PunishmentEntry, id: string, filename: string) {
-		if (id.startsWith('#')) return;
+	appendPunishment(entry: PunishmentEntry, id: string, filename: string, allowNonUserIDs?: boolean) {
+		if (!allowNonUserIDs && id.startsWith('#')) return;
 		const buf = Punishments.renderEntry(entry, id);
 		return FS(filename).append(buf);
 	}
@@ -387,7 +413,8 @@ export const Punishments = new class {
 		for (const row of data.replace('\r', '').split("\n")) {
 			if (!row) continue;
 			const [ip, reason] = row.trim().split("\t");
-			if (!IPTools.ipRegex.test(ip)) continue;
+			// it can be an ip or a range
+			if (!IPTools.ipRegex.test(ip) || !IPTools.ipRangeRegex.test(ip)) continue;
 			if (!reason) continue;
 
 			Punishments.sharedIpBlacklist.set(ip, reason);
@@ -435,6 +462,7 @@ export const Punishments = new class {
 	 *********************************************************/
 
 	async punish(user: User | ID, punishment: Punishment, ignoreAlts: boolean, bypassPunishmentfilter = false) {
+		user = Users.get(user) || user;
 		if (typeof user === 'string') {
 			return Punishments.punishName(user, punishment);
 		}
@@ -715,7 +743,7 @@ export const Punishments = new class {
 	 *********************************************************/
 
 	async ban(
-		user: User, expireTime: number | null, id: ID | PunishType | null, ignoreAlts: boolean, ...reason: string[]
+		user: User | ID, expireTime: number | null, id: ID | PunishType | null, ignoreAlts: boolean, ...reason: string[]
 	) {
 		if (!expireTime) expireTime = Date.now() + GLOBALBAN_DURATION;
 		const punishment = ['BAN', id, expireTime, ...reason] as Punishment;
@@ -742,9 +770,14 @@ export const Punishments = new class {
 		if (!expireTime) expireTime = Date.now() + LOCK_DURATION;
 		const punishment = ['LOCK', id, expireTime, reason] as Punishment;
 
+		const userObject = Users.get(user);
+		// This makes it easier for unit tests to tell if a user was locked
+		if (userObject) userObject.locked = punishment[1];
+
 		const affected = await Punishments.punish(user, punishment, ignoreAlts, bypassPunishmentfilter);
 
 		for (const curUser of affected) {
+			Punishments.checkPunishmentTime(curUser, punishment);
 			curUser.locked = punishment[1];
 			curUser.updateIdentity();
 		}
@@ -783,16 +816,22 @@ export const Punishments = new class {
 		const logEntry = {
 			action: `AUTO${punishment}`,
 			visualRoomID: typeof room !== 'string' ? (room as Room).roomid : room,
-			ip: typeof user !== 'string' ? (user as User).latestIp : undefined,
+			ip: typeof user !== 'string' ? (user as User).latestIp : null,
 			userid: userid,
 			note: reason,
+			isGlobal: true,
 		};
 		if (typeof user !== 'string') logEntry.ip = (user as User).latestIp;
-		Rooms.global.modlog(logEntry);
-		Rooms.get(room)?.modlog(logEntry);
 
 		const roomObject = Rooms.get(room);
 		const userObject = Users.get(user);
+
+		if (roomObject) {
+			roomObject.modlog(logEntry);
+		} else {
+			Rooms.global.modlog(logEntry);
+		}
+
 		if (roomObject?.battle && userObject && userObject.connections[0]) {
 			Chat.parse('/savereplay forpunishment', roomObject, userObject, userObject.connections[0]);
 		}
@@ -810,6 +849,7 @@ export const Punishments = new class {
 			id = user.locked;
 			user.locked = null;
 			user.namelocked = null;
+			user.destroyPunishmentTimer();
 			user.updateIdentity();
 			success.push(user.getLastName());
 		}
@@ -818,6 +858,7 @@ export const Punishments = new class {
 				if (curUser.locked === id) {
 					curUser.locked = null;
 					curUser.namelocked = null;
+					curUser.destroyPunishmentTimer();
 					curUser.updateIdentity();
 					success.push(curUser.getLastName());
 				}
@@ -832,6 +873,34 @@ export const Punishments = new class {
 		}
 		return success;
 	}
+	/**
+	 * Sets the punishment timer for a user,
+	 * to either MAX_PUNISHMENT_TIMER_LENGTH or the amount of time left on the punishment.
+	 * It also expires a punishment if the time is up.
+	 */
+	checkPunishmentTime(user: User, punishment: Punishment) {
+		if (user.punishmentTimer) {
+			clearTimeout(user.punishmentTimer);
+			user.punishmentTimer = null;
+		}
+
+		// Don't unlock users who have non-time-based locks such as #hostfilter
+		// Optional chaining doesn't seem to work properly in callbacks of setTimeout
+		if (user.locked && user.locked.startsWith('#')) return;
+
+		const [, id, expireTime] = punishment;
+
+		const timeLeft = expireTime - Date.now();
+		if (timeLeft <= 1) {
+			if (user.locked === id) Punishments.unlock(user.id);
+			return;
+		}
+		const waitTime = Math.min(timeLeft, MAX_PUNISHMENT_TIMER_LENGTH);
+		user.punishmentTimer = setTimeout(() => {
+			// make sure we're not referencing a pre-hotpatch Punishments instance
+			global.Punishments.checkPunishmentTime(user, punishment);
+		}, waitTime);
+	}
 	async namelock(
 		user: User | ID, expireTime: number | null, id: ID | PunishType | null, ignoreAlts: boolean, ...reason: string[]
 	) {
@@ -840,6 +909,7 @@ export const Punishments = new class {
 
 		const affected = await Punishments.punish(user, punishment, ignoreAlts);
 		for (const curUser of affected) {
+			Punishments.checkPunishmentTime(curUser, punishment);
 			curUser.locked = punishment[1];
 			curUser.namelocked = punishment[1];
 			curUser.resetName(true);
@@ -859,6 +929,7 @@ export const Punishments = new class {
 			id = user.locked;
 			user.locked = null;
 			user.namelocked = null;
+			user.destroyPunishmentTimer();
 			user.resetName();
 			success.push(user.getLastName());
 		}
@@ -867,6 +938,7 @@ export const Punishments = new class {
 				if (curUser.locked === id) {
 					curUser.locked = null;
 					curUser.namelocked = null;
+					curUser.destroyPunishmentTimer();
 					curUser.resetName();
 					success.push(curUser.getLastName());
 				}
@@ -924,10 +996,123 @@ export const Punishments = new class {
 		}
 	}
 
+	/**
+	 * Bans a user from using groupchats. Returns an array of roomids of the groupchat they created, if any.
+	 * We don't necessarily want to delete these, since we still need to warn the participants,
+	 * and make a modnote of the participant names, which doesn't seem appropriate for a Punishments method.
+	 */
+	groupchatBan(user: User | ID, expireTime: number | null, id: ID | null, reason: string | null) {
+		if (!expireTime) expireTime = Date.now() + GROUPCHATBAN_DURATION;
+		const punishment = ['GROUPCHATBAN', id, expireTime, reason] as Punishment;
+
+		const groupchatsCreated = [];
+		const targetUser = Users.get(user);
+		if (targetUser) {
+			for (const roomid of targetUser.inRooms || []) {
+				const targetRoom = Rooms.get(roomid);
+				if (!targetRoom?.roomid.startsWith('groupchat-')) continue;
+				if (targetRoom.game && targetRoom.game.removeBannedUser) {
+					targetRoom.game.removeBannedUser(targetUser);
+				}
+				targetUser.leaveRoom(targetRoom.roomid);
+
+				// Handle groupchats that the user created
+				if (targetRoom.auth.get(targetUser) === Users.HOST_SYMBOL) {
+					groupchatsCreated.push(targetRoom.roomid);
+					Punishments.bannedGroupchatParticipants[targetRoom.roomid] = new Set(
+						// Room#users is a UserTable where the keys are IDs,
+						// but typed as strings so that they can be used as object keys.
+						Object.keys(targetRoom.users).filter(u => !targetRoom.users[u].can('lock')) as ID[]
+					);
+				}
+			}
+		}
+
+		Punishments.roomPunish("groupchat", user, punishment);
+		return groupchatsCreated;
+	}
+
+	groupchatUnban(user: User | ID) {
+		let userid = (typeof user === 'object' ? (user as User).id : user);
+
+		const punishment = Punishments.isGroupchatBanned(user);
+		if (punishment) userid = punishment[1] as ID;
+
+		return Punishments.roomUnpunish("groupchat", userid, 'GROUPCHATBAN');
+	}
+
+	isGroupchatBanned(user: User | ID) {
+		const userid = toID(user);
+		const targetUser = Users.get(user);
+
+		let punishment = Punishments.roomUserids.nestedGet("groupchat", userid);
+		if (punishment?.[0] === 'GROUPCHATBAN') return punishment;
+
+		if (targetUser?.autoconfirmed) {
+			punishment = Punishments.roomUserids.nestedGet("groupchat", targetUser.autoconfirmed);
+			if (punishment?.[0] === 'GROUPCHATBAN') return punishment;
+		}
+
+		if (targetUser && !targetUser.trusted) {
+			for (const ip of targetUser.ips) {
+				punishment = Punishments.roomIps.nestedGet("groupchat", ip);
+				if (punishment?.[0] === 'GROUPCHATBAN') {
+					if (Punishments.sharedIps.has(ip) && targetUser.autoconfirmed) return;
+					return punishment;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Monitors a groupchat, watching in case too many users who had participated in
+	 * a groupchat that was deleted because its owner was groupchatbanned join.
+	 */
+	monitorGroupchatJoin(room: BasicRoom, newUser: User | ID) {
+		if (Punishments.lastGroupchatMonitorTime[room.roomid] > (Date.now() - GROUPCHAT_MONITOR_INTERVAL)) return;
+		const newUserID = toID(newUser);
+		for (const [roomid, participants] of Object.entries(Punishments.bannedGroupchatParticipants)) {
+			if (!participants.has(newUserID)) continue;
+			let overlap = 0;
+			for (const participant of participants) {
+				if (participant in room.users || room.auth.has(participant)) overlap++;
+			}
+			if (overlap > GROUPCHAT_PARTICIPANT_OVERLAP_THRESHOLD) {
+				let html = `|html|[GroupchatMonitor] The groupchat «<a href="/${room.roomid}">${room.roomid}</a>» `;
+				if (Config.modloglink) html += `(<a href="${Config.modloglink(new Date(), room.roomid)}">logs</a>) `;
+
+				html += `includes ${overlap} participants from forcibly deleted groupchat «<a href="/${roomid}">${roomid}</a>»`;
+				if (Config.modloglink) html += ` (<a href="${Config.modloglink(new Date(), roomid)}">logs</a>)`;
+				html += `.`;
+
+				Rooms.global.notifyRooms(['staff'], html);
+				Punishments.lastGroupchatMonitorTime[room.roomid] = Date.now();
+			}
+		}
+	}
+
 	lockRange(range: string, reason: string, expireTime?: number | null) {
 		if (!expireTime) expireTime = Date.now() + RANGELOCK_DURATION;
 		const punishment = ['LOCK', '#rangelock', expireTime, reason] as Punishment;
 		Punishments.ips.set(range, punishment);
+
+		const ips = [];
+		const parsedRange = IPTools.stringToRange(range);
+		if (!parsedRange) throw new Error(`Invalid IP range: ${range}`);
+		const {minIP, maxIP} = parsedRange;
+
+		for (let ipNumber = minIP; ipNumber <= maxIP; ipNumber++) {
+			ips.push(IPTools.numberToIP(ipNumber));
+		}
+
+		void Punishments.appendPunishment({
+			userids: [],
+			ips,
+			punishType: 'LOCK',
+			expireTime,
+			reason,
+			rest: [],
+		}, '#rangelock', PUNISHMENT_FILE, true);
 	}
 	banRange(range: string, reason: string, expireTime?: number | null) {
 		if (!expireTime) expireTime = Date.now() + RANGELOCK_DURATION;
@@ -1037,6 +1222,7 @@ export const Punishments = new class {
 				}
 				user.locked = null;
 				user.namelocked = null;
+				user.destroyPunishmentTimer();
 
 				user.updateIdentity();
 			}
@@ -1219,17 +1405,17 @@ export const Punishments = new class {
 			}
 			user.locked = null;
 			user.namelocked = null;
-
+			user.destroyPunishmentTimer();
 			user.updateIdentity();
 			return;
 		}
-		if (registered && id === 'BAN') {
+		if (id === 'BAN') {
 			user.popup(
 				`Your username (${user.name}) is banned${bannedUnder}. Your ban will expire in a few days.${reason}` +
 				`${Config.appealurl ? `||||Or you can appeal at: ${Config.appealurl}` : ``}`
 			);
 			user.notified.punishment = true;
-			void Punishments.punish(user, punishment, false);
+			if (registered) void Punishments.punish(user, punishment, false);
 			user.disconnectAll();
 			return;
 		}
@@ -1251,6 +1437,7 @@ export const Punishments = new class {
 			user.locked = punishUserid;
 			user.updateIdentity();
 		}
+		Punishments.checkPunishmentTime(user, punishment);
 	}
 
 	checkIp(user: User, connection: Connection) {
@@ -1271,6 +1458,7 @@ export const Punishments = new class {
 				if (punishment[0] === 'NAMELOCK') {
 					user.namelocked = punishment[1];
 				}
+				Punishments.checkPunishmentTime(user, punishment);
 			}
 		}
 
@@ -1316,7 +1504,6 @@ export const Punishments = new class {
 
 		return banned;
 	}
-
 	checkNameInRoom(user: User, roomid: RoomID): boolean {
 		let punishment = Punishments.roomUserids.nestedGet(roomid, user.id);
 		if (!punishment && user.autoconfirmed) {
@@ -1361,22 +1548,23 @@ export const Punishments = new class {
 	checkLockExpiration(userid: string | null) {
 		if (!userid) return ``;
 		const punishment = Punishments.userids.get(userid);
+		const user = Users.get(userid);
+		if (user?.permalocked) return ` (never expires; you are permalocked)`;
 
-		if (punishment) {
-			const user = Users.get(userid);
-			if (user?.permalocked) return ` (never expires; you are permalocked)`;
-			const expiresIn = new Date(punishment[2]).getTime() - Date.now();
-			const expiresDays = Math.round(expiresIn / 1000 / 60 / 60 / 24);
-			let expiresText = '';
-			if (expiresDays >= 1) {
-				expiresText = `in around ${Chat.count(expiresDays, "days")}`;
-			} else {
-				expiresText = `soon`;
-			}
-			if (expiresIn > 1) return ` (expires ${expiresText})`;
+		return Punishments.checkPunishmentExpiration(punishment);
+	}
+
+	checkPunishmentExpiration(punishment: Punishment | undefined) {
+		if (!punishment) return ``;
+		const expiresIn = new Date(punishment[2]).getTime() - Date.now();
+		const expiresDays = Math.round(expiresIn / 1000 / 60 / 60 / 24);
+		let expiresText = '';
+		if (expiresDays >= 1) {
+			expiresText = `in around ${Chat.count(expiresDays, "days")}`;
+		} else {
+			expiresText = `soon`;
 		}
-
-		return ``;
+		if (expiresIn > 1) return ` (expires ${expiresText})`;
 	}
 
 	isRoomBanned(user: User, roomid: RoomID): Punishment | undefined {
@@ -1411,6 +1599,16 @@ export const Punishments = new class {
 		if (room.parent) return Punishments.isRoomBanned(user, room.parent.roomid);
 	}
 
+	isBlacklistedSharedIp(ip: string) {
+		const num = IPTools.ipToNumber(ip);
+		for (const [blacklisted, reason] of this.sharedIpBlacklist) {
+			const range = IPTools.stringToRange(blacklisted);
+			if (!range) throw new Error("Falsy range in sharedIpBlacklist");
+			if (IPTools.checkPattern([range], num)) return reason;
+		}
+		return false;
+	}
+
 	/**
 	 * Returns an array of all room punishments associated with a user.
 	 *
@@ -1442,7 +1640,10 @@ export const Punishments = new class {
 							longestIPPunishment = punishment;
 						}
 					}
-					if (longestIPPunishment) punishments.push([curRoom, longestIPPunishment]);
+					if (longestIPPunishment) {
+						punishments.push([curRoom, longestIPPunishment]);
+						continue;
+					}
 				}
 			}
 			if (checkMutes && curRoom.muteQueue) {
@@ -1465,7 +1666,7 @@ export const Punishments = new class {
 		// `Punishments.roomIps.get(roomid)` guaranteed to exist above
 		(roomid ? Punishments.roomIps.get(roomid)! : Punishments.ips).forEach((punishment, ip) => {
 			const [punishType, id, expireTime, reason, ...rest] = punishment;
-			if (id.startsWith('#')) return;
+			if (id !== '#rangelock' && id.startsWith('#')) return;
 			let entry = punishmentTable.get(id);
 
 			if (entry) {

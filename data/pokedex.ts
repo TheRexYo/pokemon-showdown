@@ -1,46 +1,47 @@
+/* TODO List:
+	- Correct ID numbers.
+	- Add all existing Zelckeymon before making new ones.
+	- Properly add Zelckey and Chomp morphs.
+*/
+/* Egg Group Rules:
+	- Gene-based groups (such as 'Reptile' and 'Arthropod') are organized into archetypes based on genetic relation. Each family / order has its own number assigned to it.
+	- Element-based groups (such as 'Water' and 'Electric') are organized into archetypes based on taxonomic class (crustacean, reptilian, etc). Each archetype has a number assigned to it.
+*/
+/* Egg Group Notes:
+	- Because Gene-based groups are limited to closely related species, they serve as the primary means of limiting moves to certain archetypes.
+	- Because Element-based groups allow Zelckeymon of different families (but the same class) to breed, they are the primary means of allowing moves between archetypes.
+	- Unique "Special Egg-Groups" also exist. These egg-groups are used to categorize Zelckeymon together, often to bridge gaps between archetypes. However, they can also be used to limit the breeding of certain species by removing the more standard archetypes in favor of special ones.
+*/
+/*Egg Group Archetypes (Gene-Based):
+	- Reptile
+		- 1 -> Chomposaurian (Chomps, Zelckeys, and many other Dinosaur-like species)
+		- 2 -> Saurian (Lizards)
+		- 3 -> Serpentine (Snakes)
+		- 4 -> Pre-Birds
+	- Bird
+		- 1 -> Primitive Birds & Protobirds
+		- 2 -> Parrots & Kookaburras
+		- 3 -> Songbirds
+	- Arthropod
+		- 1 -> Crustaceans
+		- 2 -> Bees, Wasps, & Ants
+		- 3 -> True Bugs (Aphids, Toe-Biters, etc.)
+	- Amphibian
+		- 1 -> Salamander
+	- Mammal
+		- 1 -> Carnivorid (Feline, Canine, etc.)
+*/
+/*Egg Group Archetypes (Element-Based):
+	- Generic*
+		- 1 -> Reptile
+		- 2 -> Arthropod
+		- 3 -> Amphibian
+		- 4 -> Mammal
+		- 5 -> Bird
+	*Archetype numbers in this category apply to all other elemental categories that don't have that number specified as something else.
+*/
+
 export const Pokedex: {[speciesid: string]: SpeciesData} = {
-	/* TODO List:
-		- Correct ID numbers.
-		- Add all existing Zelckeymon before making new ones.
-		- Properly add Zelckey and Chomp morphs.
-	*/
-	/* Egg Group Rules:
-		- Gene-based groups (such as 'Reptile' and 'Arthropod') are organized into archetypes based on genetic relation. Each family / order has its own number assigned to it.
-		- Element-based groups (such as 'Water' and 'Electric') are organized into archetypes based on taxonomic class (crustacean, reptilian, etc). Each archetype has a number assigned to it.
-	*/
-	/* Egg Group Notes:
-		- Because Gene-based groups are limited to closely related species, they serve as the primary means of limiting moves to certain archetypes.
-		- Because Element-based groups allow Zelckeymon of different families (but the same class) to breed, they are the primary means of allowing moves between archetypes.
-		- Unique "Special Egg-Groups" also exist. These egg-groups are used to categorize Zelckeymon together, often to bridge gaps between archetypes. However, they can also be used to limit the breeding of certain species by removing the more standard archetypes in favor of special ones.
-	*/
-	/*Egg Group Archetypes (Gene-Based):
-		- Reptile
-			- 1 -> Chomposaurian (Chomps, Zelckeys, and many other Dinosaur-like species)
-			- 2 -> Saurian (Lizards)
-			- 3 -> Serpentine (Snakes)
-			- 4 -> Pre-Birds
-		- Bird
-			- 1 -> Primitive Birds & Protobirds
-			- 2 -> Parrots & Kookaburras
-			- 3 -> Songbirds
-		- Arthropod
-			- 1 -> Crustaceans
-			- 2 -> Bees, Wasps, & Ants
-			- 3 -> True Bugs (Aphids, Toe-Biters, etc.)
-		- Amphibian
-			- 1 -> Salamander
-		- Mammal
-			- 1 -> Carnivorid (Feline, Canine, etc.)
-	*/
-	/*Egg Group Archetypes (Element-Based):
-		- Generic*
-			- 1 -> Reptile
-			- 2 -> Arthropod
-			- 3 -> Amphibian
-			- 4 -> Mammal
-			- 5 -> Bird
-		*Archetype numbers in this category apply to all other elemental categories that don't have that number specified as something else.
-	*/
 	//#01 - Chomp
 	chomp: {
 		gen: 1,

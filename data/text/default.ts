@@ -1,4 +1,4 @@
-export const DefaultText = {
+export const DefaultText: {[k: string]: DefaultText} = {
 	default: {
 		startBattle: "Battle started between [TRAINER] and [TRAINER]!",
 		winBattle: "**[TRAINER]** won the battle!",
@@ -20,6 +20,10 @@ export const DefaultText = {
 		faint: "[POKEMON] fainted!",
 		swap: "[POKEMON] and [TARGET] switched places!",
 		swapCenter: "[POKEMON] moved to the center!",
+
+		// Multi Battles only
+		canDynamax: "  [TRAINER] can dynamax now!",
+		canDynamaxOwn: "  Dynamax Energy gathered around [TRAINER]!",
 
 		zEffect: "  [POKEMON] unleashes its full-force Z-Move!",
 		move: "[POKEMON] used **[MOVE]**!",
@@ -266,13 +270,13 @@ export const DefaultText = {
 		upkeep: "  (The sandstorm is raging.)",
 		damage: "  [POKEMON] is buffeted by the sandstorm!",
 	},
-	sun: {
+	sunnyday: {
 		weatherName: "Sun",
 		start: "  The sunlight turned harsh!",
 		end: "  The harsh sunlight faded.",
 		upkeep: "  (The sunlight is strong.)",
 	},
-	rain: {
+	raindance: {
 		weatherName: "Rain",
 		start: "  It started to rain!",
 		end: "  The rain stopped.",
@@ -301,7 +305,7 @@ export const DefaultText = {
 	},
 	deltastream: {
 		weatherName: "Strong Winds",
-		start: "  Mysterious strong winds are protecting Wind-type Pok\u00E9mon!",
+		start: "  Mysterious strong winds are protecting Flying-type Pok\u00E9mon!",
 		end: "  The mysterious strong winds have dissipated!",
 		activate: "  The mysterious strong winds weakened the attack!",
 		block: "  The mysterious strong winds blow on regardless!",

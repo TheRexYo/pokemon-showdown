@@ -68,7 +68,7 @@ export const Tags: {[id: string]: TagData} = {
 	},
 	bite: {
 		name: "Bite",
-		desc: "Counts as a 'bite' move. (Boosted 1.5x by Bite-Force, etc.)",
+		desc: "Boosted 1.5x by Strong Jaw.",
 		moveFilter: move => 'bite' in move.flags,
 	},
 	ballistic: {
@@ -155,10 +155,6 @@ export const Tags: {[id: string]: TagData} = {
 	nfe: {
 		name: "NFE",
 		pokemonFilter: species => species.tier === 'NFE',
-	},
-	lcuber: {
-		name: "LC Uber",
-		pokemonFilter: species => species.doublesTier === 'LC Uber',
 	},
 	lc: {
 		name: "LC",
