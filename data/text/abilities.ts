@@ -217,6 +217,11 @@ export const AbilitiesText: {[k: string]: AbilityText} = {
 		desc: "This Zelckeymon's partially-trapping moves always trap the target for 8 turns.",
 		shortDesc: "This Zelckeymon's moves always trap for the maximum duration.",
 	},
+	darkbody: {
+		name: "Dark Body",
+		desc: "This Zelckeymon includes Dark-Type in it's type-effectiveness.",
+		shortDesc: "This Zelckeymon adds Dark to its typing.",
+	},
 	// Old Abilities //
 	
 	/*
