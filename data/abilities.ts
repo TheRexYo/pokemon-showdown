@@ -36,11 +36,13 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#00 - No Ability
 	noability: {
 		num: 0,
+		name: "No Ability",
 		rating: 0,
 	},
 	//#01 - Elemental Boost
 	elementalboost: {
 		num: 1,
+		name: "Elemental Boost",
 		onModifyMove(move) {
 			move.stab = 1.75;
 		},
@@ -49,6 +51,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#02 - Elemental Force
 	elementalforce: {
 		num: 2,
+		name: "Elemental Force",
 		onModifyDamage(damage, source, target, move) {
 			const type = move.type;
 			if (target.getMoveHitData(move).typeMod < 0 && source.hasType(type)) {
@@ -61,6 +64,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#03 - Bite Force
 	biteforce: {
 		num: 3,
+		name: "Bite Force",
 		rating: 1,
 		onBasePower(basePower, attacker, defender, move) {
 			if (move.flags['bite']) {
@@ -71,6 +75,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#04 - Mega-Force
 	megaforce: {
 		num: 4,
+		name: "Mega-Force",
 		rating: 5,
 		onBasePower(basePower, attacker, defender, move) {
 			return basePower * 1.25;
@@ -79,6 +84,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#05 - Hulking
 	hulking: {
 		num: 5,
+		name: "Hulking",
 		rating: 5,
 		onBasePower(basePower, attacker, defender, move) {
 			return basePower * 3;
@@ -90,6 +96,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#06 - Generalist
 	generalist: {
 		num: 6,
+		name: "Generalist",
 		rating: 3,
 		onModifyMove(move) {
 			move.stab = 1;
@@ -101,6 +108,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#07 - Specialist
 	specialist: {
 		num: 7,
+		name: "Specialist",
 		rating: 3,
 		onModifyMove(move) {
 			move.stab = 3;
@@ -112,6 +120,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#08 - Speed Demon
 	speeddemon: {
 		num: 8,
+		name: "Speed Demon",
 		onModifyPriority(priority, pokemon, target, move) {
 			return priority + 1;
 		},
@@ -120,12 +129,14 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#09 - Resilient
 	resilient: {
 		num: 9,
+		name: "Resilient",
 		onCriticalHit: false,
 		rating: 1,
 	},
 	//#10 - Full Armor
 	fullarmor: {
 		num: 10,
+		name: "Full Armor",
 		onCriticalHit: false,
 		rating: 4,
 		onSourceModifyDamage(damage, source, target, move) {
@@ -138,6 +149,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#11 - Pack Tactics
 	packtactics: {
 		num: 11,
+		name: "Pack Tactics",
 		rating: 0,
 		onAllyBasePowerPriority: 22,
 		onAllyBasePower(basePower, attacker, defender, move) {
@@ -150,6 +162,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#12 - Adaptability
 	adaptability: {
 		num: 12,
+		name: "Adaptability",
 		onAfterMoveSecondary(target, source, move) {
 			if (!target.hp) return;
 			const type = move.type;
@@ -174,6 +187,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#13 - Cumbersome
 	cumbersome: {
 		num: 13,
+		name: "Cumbersome",
 		rating: -1,
 		onModifyPriority(priority, pokemon, target, move) {
 			return priority - 1;
@@ -182,6 +196,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#14 - Mini
 	mini: {
 		num: 14,
+		name: "Mini",
 		rating: -1,
 		onBasePower(basePower, attacker, defender, move) {
 			return basePower * 0.5;
@@ -190,6 +205,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#15 - Evolutionary
 	evolutionary: {
 		num: 15,
+		name: "Evolutionary",
 		rating: 2, //Considered to have a rating of 2 due to STAB, despite the ability being effectively useless without that.
 		onModifyTypePriority: -1,
 		onModifyType(move, pokemon) {
@@ -203,6 +219,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#16 - Barricade
 	barricade: {
 		num: 16,
+		name: "Barricade",
 		rating: 1,
 		onResidualOrder: 1,
 		onResidualSubOrder: 3,
@@ -219,6 +236,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#17 - Mega-Armor
 	megaarmor: {
 		num: 17,
+		name: "Mega-Armor",
 		rating: 5,
 		onSourceModifyDamage(damage, source, target, move) {
 			this.debug('Mega-Armor resistance');
@@ -229,6 +247,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	incorporeal: {
 		num: 18,
 		rating: 5,
+		name: "Incorporeal",
 		onSourceModifyDamage(damage, source, target, move) {
 			if (move.category === 'Physical') {
 				this.debug('Incorporeal immunity');
@@ -239,6 +258,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#19 - Metaphysical
 	metaphysical: {
 		num: 19,
+		name: "Metaphysical",
 		rating: 5,
 		onSourceModifyDamage(damage, source, target, move) {
 			if (move.category === 'Special') {
@@ -250,6 +270,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#20 - Magmabolism
 	magmabolism: {
 		num: 20,
+		name: "Magmabolism",
 		rating: 3,
 		onTryHit(target, source, move) {
 			if (target !== source && move.type === 'Fire') {
@@ -263,6 +284,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#21 - Living Fire
 	livingfire: {
 		num: 21,
+		name: "Living Fire",
 		rating: 2,
 		onDamagingHit(damage, target, source, move) {
 			if (move.flags['contact']) {
@@ -273,6 +295,7 @@ export const Abilities: {[abilityid: string]: AbilityData} = {
 	//#22 - Diametric
 	diametric: {
 		num: 22,
+		name: "Diametric",
 		rating: 0,
 		onBoost(boost, target, source, effect) {
 			if (effect && effect.id === 'zpower') return;
