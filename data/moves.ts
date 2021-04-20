@@ -279,7 +279,8 @@ export const Moves: {[moveid: string]: MoveData} = {
 		shortDesc: "Lowers the user's Attack and Defense by 2.",
 		pp: 5,
 		priority: 0,
-		flags: {protect: 1, reflectable: 1, mirror: 1},
+		isContact: false,
+		flags: {protect: 1, mirror: 1},
 		self: {
 			boosts: {
 				atk: -2,
@@ -302,8 +303,8 @@ export const Moves: {[moveid: string]: MoveData} = {
 		shortDesc: "Lowers the user's Sp. Attack and Sp. Defense by 2.",
 		pp: 5,
 		priority: 0,
-		isContact: true,
-		flags: {protect: 1, reflectable: 1, mirror: 1},
+		isContact: false,
+		flags: {protect: 1, mirror: 1},
 		self: {
 			boosts: {
 				spa: -2,
